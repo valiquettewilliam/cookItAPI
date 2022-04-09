@@ -1,0 +1,7 @@
+With more time, I would do these changes in this order to make the solution better:
+
+1- Perform more thorough checks on the every extern data.
+2- Had more diverse and precise documentation of errors by returning more meningfull messages.
+3- Make UnitTests for the endpoint and each of his feature.
+4- If needed, eliminate duplicate in the response, so if 2 items needs to be picked up at the same station, the station would only appear one time in the list returned.
+5- Add more endpoints that can answer some specific query, for example return items by their deliveryWeekor category.
