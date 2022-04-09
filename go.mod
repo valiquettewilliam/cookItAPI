@@ -1,4 +1,4 @@
-module example/hello
+module cook_it_API
 
 go 1.18
 
