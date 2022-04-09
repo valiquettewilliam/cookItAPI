@@ -37,21 +37,19 @@ type inRequestType struct {
 	ItemsID []uint16 `json:"itemIds"`
 }
 
-func homePage(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Welcome to the HomePage!")
-	fmt.Println("Endpoint Hit: homePage")
+func handleRequests() {
+	myRouter := mux.NewRouter().StrictSlash(true)
+
+	myRouter.HandleFunc("/stations", getStations).Methods("GET")
+
+	log.Fatal(http.ListenAndServe(":8080", myRouter))
 }
 
-func handleRequests() {
-	// creates a new instance of a mux router
-	myRouter := mux.NewRouter().StrictSlash(true)
-	// replace http.HandleFunc with myRouter.HandleFunc
-	myRouter.HandleFunc("/", homePage)
-	myRouter.HandleFunc("/stations", getStations).Methods("GET")
-	// finally, instead of passing in nil, we want
-	// to pass in our newly created router as the second
-	// argument
-	log.Fatal(http.ListenAndServe(":10000", myRouter))
+func returnError(w http.ResponseWriter, err error) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusBadRequest)
+
+	json.NewEncoder(w).Encode(err.Error())
 }
 
 func getStations(w http.ResponseWriter, r *http.Request) {
@@ -60,15 +58,13 @@ func getStations(w http.ResponseWriter, r *http.Request) {
 	var allItems []item = getAllItems()
 	var allProteins []protein = getAllproteins()
 
-	//TODO check if valid id
 	var inItemIDs inRequestType
 	byteValue, _ := ioutil.ReadAll(r.Body)
 	if err := json.Unmarshal(byteValue, &inItemIDs); err != nil {
-		panic(err)
+		returnError(w, err)
 	}
 
 	//output value
-	//TODO find better name for return value
 	var retPicks []string
 	var retOutOfStock []string
 
@@ -111,6 +107,9 @@ func getStations(w http.ResponseWriter, r *http.Request) {
 	returnJSON.Picks = retPicks
 	returnJSON.Out_of_stock = retOutOfStock
 
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
 	json.NewEncoder(w).Encode(returnJSON)
 
 }
@@ -120,7 +119,7 @@ func getAllItems() []item {
 	byteValue, _ := ioutil.ReadAll(response.Body)
 	var allItems []item
 	if err := json.Unmarshal(byteValue, &allItems); err != nil {
-		panic(err)
+		fmt.Println(err.Error())
 	}
 	return allItems
 }
@@ -130,7 +129,7 @@ func getAllproteins() []protein {
 	byteValue, _ := ioutil.ReadAll(response.Body)
 	var allProteins []protein
 	if err := json.Unmarshal(byteValue, &allProteins); err != nil {
-		panic(err)
+		fmt.Println(err.Error())
 	}
 	return allProteins
 }
@@ -145,8 +144,6 @@ func (p *protein) UnmarshalJSON(d []byte) error {
 	if err := json.Unmarshal(d, &tmpStruct); err != nil {
 		return err
 	}
-
-	//TODO verif error better
 
 	//convert string to rune
 	p.Code = []rune(tmpStruct.Code.(string))[0]
@@ -167,10 +164,7 @@ func (in_req *inRequestType) UnmarshalJSON(d []byte) error {
 		return err
 	}
 
-	//TODO verif error better
-
-	//convert string to uint16
-
+	//convert float64 to uint16
 	for _, id := range tmpStruct.ItemsID {
 
 		tmpID, ok := id.(float64)
@@ -186,7 +180,7 @@ func (in_req *inRequestType) UnmarshalJSON(d []byte) error {
 }
 
 func main() {
-	fmt.Println("Rest API v2.0 - Mux Routers")
+	fmt.Println("REST API started")
 
 	handleRequests()
 }
